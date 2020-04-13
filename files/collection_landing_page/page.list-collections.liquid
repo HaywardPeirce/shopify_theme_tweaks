@@ -1,0 +1,116 @@
+<header class="PageHeader">
+    <div class="Container">
+    <div class="SectionHeader SectionHeader--center">
+        <h1 class="SectionHeader__Heading Heading u-h1">{{page.title}}</h1></div>
+    </div>
+</header>
+
+{% comment %}
+  Collections are listed here.
+{% endcomment %}
+
+{% capture uses_minimal_framework %}{% include 'product-loop' %}{% endcapture %}
+
+{% if uses_minimal_framework contains 'Liquid error' %}
+  {% assign uses_minimal_framework = false %}
+  {% assign grid_item_width = 'large--one-quarter large-up--one-quarter medium--one-third medium-up--one-third small--one-half large--col-3 medium--col-4 small--col-6' %}
+{% else %}
+  {% assign uses_minimal_framework = true %}
+  {% assign grid_item_width = 'span3' %}
+{% endif %}
+
+{% assign image_size = 'large' %}
+
+{% if linklists[page.handle].links.size > 0 %}
+    
+  {% assign number_of_links = 0 %}
+    
+  <div class="ProductListWrapper">
+    <div class="ProductList ProductList--grid  Grid" data-mobile-count="2" data-desktop-count="4">
+
+    {% for link in linklists[page.handle].links %}
+
+      {% if link.type == 'collection_link' %}
+
+        {% comment %}
+        If we have a collection link.
+        {% endcomment %}   
+
+        {% assign collection = link.object %}
+        {% assign number_of_links = number_of_links | plus: 1 %}
+
+        <div class="Grid__Cell 1/2--phone 1/3--tablet-and-up 1/4--desk">
+            <div class="ProductItem " style="visibility: inherit; opacity: 1; transform: matrix(1, 0, 0, 1, 0, 0);">
+                <div class="ProductItem__Wrapper">
+                    <a href="{{ link.url }}" class="ProductItem__ImageWrapper ">
+                        {% if collection.image %}
+                            <div class="AspectRatio AspectRatio--withFallback" style="max-width: {{ collection.image.width }}px; padding-bottom: {{ 100.0 | divided_by: collection.image.aspect_ratio }}%; --aspect-ratio: {{ collection.image.aspect_ratio }}">
+                                <img class="ProductItem__Image Image--fadeIn lazyautosizes Image--lazyLoaded" data-widths="[200]" data-sizes="auto" alt="{{ link.title | escape }}" data-media-id="{{ link.id }}" data-srcset="{{ collection | img_url: image_size }} 200w" sizes="181px" srcset="{{ collection | img_url: image_size }} 200w">
+                        {% else %}
+                        {% assign product = collection.products.first %}
+                            <div class="AspectRatio AspectRatio--withFallback" style="max-width: {{ product.featured_image.width }}px; padding-bottom: {{ 100.0 | divided_by: product.featured_image.aspect_ratio }}%; --aspect-ratio: {{ product.featured_image.aspect_ratio }}">
+                                <img class="ProductItem__Image Image--fadeIn lazyautosizes Image--lazyLoaded" data-widths="[200]" data-sizes="auto" alt="{{ link.title | escape }}" data-media-id="{{ link.id }}" data-srcset="{{ product | img_url: image_size }} 200w" sizes="181px" srcset="{{ product | img_url: image_size }} 200w">
+                        {% endif %}
+                            
+                            <span class="Image__Loader"></span>
+                        </div>
+                    </a>
+                    <div class="ProductItem__Info ProductItem__Info--center">
+                    <h2 class="ProductItem__Title Heading">
+                        <a href="{{ link.url }}">{{ link.title | escape }}</a>
+                    </h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+        {% if uses_minimal_framework %}
+          {% cycle 'clear-item': '', '', '', '<div style="clear:both"></div>' %}
+        {% endif %}
+
+      {% endif %}
+
+    {% endfor %}
+
+    </div>
+  </div>
+
+    {% if number_of_links == 0 %}
+
+        <div class="grid">
+        <div class="grid__item grid-item rte text-center">
+            <p>
+            There are no links of type <i>Collection</i> in your <b>{{ page.title }}</b> link list.
+            Go ahead and <a href="/admin/link_lists/{{ linklists[page.handle].id }}" target="_blank">edit your link list</a> to use links that point to collections.
+            </p>
+        </div>
+        </div>
+
+    {% endif %}
+
+{% else %}
+
+<div class="grid">
+  <div class="grid__item grid-item rte text-center">
+    <p>
+      You do not have a link list with a handle set to <kbd>{{ page.handle }}</kbd>, or you do and it's empty. 
+      Go ahead and create a link list called <b>{{ page.title }}</b> on your <a href="/admin/links" target="_blank">Navigation page</a> and populate that link list with links that point to collections, to see collections listed here.
+      Make sure the link list also has a handle set to <kbd>{{ page.handle }}</kbd>.
+    </p>
+  </div>
+</div>
+
+{% endif %}
+
+<style>
+    kbd { 
+        background-color: #FBFBE4;
+        padding: 1px 4px;
+        border-radius: 3px;
+    }
+    .ProductListWrapper{
+        margin-top:50px;
+        
+    }
+
+</style>
