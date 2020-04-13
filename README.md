@@ -43,3 +43,69 @@ To redirect to a collection: `NoStockRedirect:collections:collection-handle`
 
 3. Configure the desired products to use the cloned template (if not making the changes from step 1 to the original)
 
+## Cart Donation Option
+Based on the code from [this guide](https://www.tetchi.ca/shopify-tutorial-adding-a-tip-or-donation-to-the-cart-page) the following is a slightly modified/updated method for adding a donation field to a Shopify store's cart page:
+
+1. Add the following snippet to the `cart-template.liquid`. The location will likely differ slightly from theme to theme.
+
+For the [Debut](https://help.shopify.com/en/manual/using-themes/themes-by-shopify/debut) theme:
+```
+<p class="cart-donation">
+  <label for="tip-amount">Tip amount (optional)</label>
+  <input id="tip-amount" type="text" name="Tip amount" placeholder="Optional driver tip">
+  <input type="button" name="addtip" class="btn btn--secondary small--hide" value="Add Tip">
+</p>
+```
+For the [Venture](https://help.shopify.com/en/manual/using-themes/themes-by-shopify/venture) theme:
+```
+<p class="cart-donation">
+	<label for="tip-amount">Tip amount (optional)</label>
+	<input id="tip-amount" type="text" name="Tip amount" placeholder="Optional tip" style="background-color: #dcdcdc;">
+	<input type="button" name="addtip" class="btn btn--secondary" value="Add Tip" style="margin-top: 10px;">
+</p>
+```
+
+2. Add the following code to a new snippet called `donation-snippet.liquid` and replace `TIP_PRODUCT_VARIANT_ID` with the variant ID of your donation product (configured with a value of $0.01). 
+```
+<script>
+$(document).ready(function () {
+	$('input[name="addtip"]').click(function(e) {
+		e.preventDefault();
+		var amount = $('#tip-amount').val();
+
+		amount = amount * 100;
+		amount = parseInt(amount);
+
+		function addDonation(){
+			var params = {
+				type: 'POST',
+				url: '/cart/add.js',
+				data: 'quantity='+amount+'&id=TIP_PRODUCT_VARIANT_ID',
+				dataType: 'json',
+				success: function(line_item) { 
+					console.log("success!");
+					if (document.location.pathname == "/cart"){
+						document.location.href = '/cart';
+					}
+				},
+				error: function() {
+					console.log("fail");
+				}
+			};
+			$.ajax(params);
+		}
+		addDonation();
+	});
+});
+</script>
+```
+
+3. Include the donation snippet in the `cart-template.liquid` file by adding the following line just before the end div tag:
+```
+{% include 'donation-snippet' %}
+```
+
+4. If not already included in `theme.liquid`, include jQuery just before the end of the head tag:
+```
+{{ '//ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.js' | script_tag }}
+```
