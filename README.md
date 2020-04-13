@@ -1,6 +1,11 @@
 # shopify_theme_tweaks
 A collection of theme tweaks for Shopify themes
 
+## Table of Contents
+- [Redirect sold out products](#redirect-sold-out-products)
+- [Cart Donation Option](#cart-donation-option)
+- [Collection Landing Page](#collection-landing-page)
+
 ## Redirect sold out products
 
 There are cases where merchants have a large catalogue of products and stock many that are one-off items that once sold out won't be available again. Rather than having to manaully hide these products they would like them to automatically redirects customers that might still have a link in the wild to a collection of similar products. 
