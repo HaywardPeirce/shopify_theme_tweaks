@@ -5,6 +5,9 @@ A collection of theme tweaks for Shopify themes
 - [Redirect sold out products](#redirect-sold-out-products)
 - [Cart Donation Option](#cart-donation-option)
 - [Collection Landing Page](#collection-landing-page)
+- [PO Box Checkout Shipping Restriction]()
+- [Basic Free Shipping Upsell Banner]()
+- [Discount cheapest product in the checkout with a discount code](discount-cheapest-product-in-the-checkout-with-a-discount-code)
 
 ## Redirect sold out products
 
@@ -120,3 +123,32 @@ $(document).ready(function () {
 Based on [this guide](https://community.shopify.com/c/Shopify-Design/Collection-Feature-a-subset-of-collections-on-a-page/m-p/614952) from the Shopify forums, the following example is a simplified and modified version that was written to work with the allure version of the [Prestige](https://themes.shopify.com/themes/prestige/styles/allure) theme.
 
 For installation; follow the linked guide and simply use the following code as the contents for the cloned `page.list-collections.liquid` file rather than the code in that guide: [page.list-collections.liquid](https://github.com/HaywardPeirce/shopify_theme_tweaks/blob/master/files/collection_landing_page/page.list-collections.liquid)
+
+## PO Box Checkout Shipping Restriction
+
+## Basic Free Shipping Upsell Banner
+
+## Discount cheapest product in the checkout with a discount code
+
+Shopify discount codes an sometimes be overly limiting in terms of the functionality they are able to provide. Thankfully, merchants can setup 0% discount codes, and then use Shopify Scripts to conduct additional logic on the line items in an checkout in order to provide a discount.
+
+The following script is a modified version of the [existing example script](https://help.shopify.com/en/manual/apps/apps-by-shopify/script-editor/examples#percentage-off-least-expensive-items) showing providing a discount on the cheapest item in an order. In this example the 15% discount is only applied when the customer uses the 0% discount code `CHEAPPRODUCT`: 
+
+```
+DISCOUNT_AMOUNT = 15
+
+if Input.cart.discount_code
+    if (Input.cart.discount_code.code == "CHEAPPRODUCT")
+        if (Input.cart.line_items.size > 1)
+            line_item = Input.cart.line_items.sort_by { |line_item| line_item.variant.price }.first
+            if line_item.quantity > 1
+            line_item = line_item.split(take: 1)
+            Input.cart.line_items << line_item
+            end
+            line_item.change_line_price(line_item.line_price * (1.0 - (DISCOUNT_AMOUNT / 100.0)), message: "#{DISCOUNT_AMOUNT}% off!")
+        end
+    end
+end
+
+Output.cart = Input.cart
+```
