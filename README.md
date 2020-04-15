@@ -7,7 +7,7 @@ A collection of theme tweaks for Shopify themes
 - [Collection Landing Page](#collection-landing-page)
 - [PO Box Checkout Shipping Restriction]()
 - [Basic Free Shipping Upsell Banner]()
-- [Discount cheapest product in the checkout with a discount code](discount-cheapest-product-in-the-checkout-with-a-discount-code)
+- [Discount cheapest product in the checkout with a discount code](#discount-cheapest-product-in-the-checkout-with-a-discount-code)
 
 ## Redirect sold out products
 
@@ -127,6 +127,114 @@ For installation; follow the linked guide and simply use the following code as t
 ## PO Box Checkout Shipping Restriction
 
 ## Basic Free Shipping Upsell Banner
+
+The following theme tweak adds a basic "You are $X away from free shipping" upsell banner to a Shopify theme. 
+
+Please note: This example doesn't currenlty support automatically updating the banner messaging when the cart is updated (without a page refresh) and the theme of the banner has been built for the [Warehouse](https://themes.shopify.com/themes/warehouse/styles/metal) theme.
+
+This example also adds in banner configuration options to the theme sections settings which let merchants control the visibility of the banner, whether it just shows up on the cart page or not, free shipping threshold, and the colour of the banner and banner text.
+
+1. Create a new section called `upsell-announcement-bar.liquid` with the following contents:
+
+```
+{%- if section.settings.show_announcement -%}
+    <section data-section-id="{{ section.id }}">
+    
+    {% assign cartCheck = false %}
+
+    {%- if section.settings.cart_page_only == true and template == 'cart' -%}
+        {% assign cartCheck = true %}
+    {%- endif -%}
+
+    {%- if cartCheck == true or section.settings.cart_page_only == false -%}
+
+        {%- if section.settings.free_shipping_amount != blank -%}
+
+            {% assign free_shipping_amount = section.settings.free_shipping_amount | plus: 0 %}
+
+            {% assign cart_total = cart.total_price | divided_by: 100 %}
+            <div class="announcement-bar free-shipping-announcement-bar">
+                <div class="container">
+                    <div class="announcement-bar__inner">
+                        <p class="announcement-bar__content announcement-bar__content--{{section.settings.text_location}}" >
+                            {% if cart_total < free_shipping_amount %}
+                                {% assign shipping_value_left = free_shipping_amount | minus: cart_total %}
+                                <span id="free_shipping_announcement_remaining">You are ${{shipping_value_left}} away from free shipping</span>
+                            {% else %}
+                                <span id="free_shipping_announcement_remaining">Your order qualifies for free shipping!</span>
+                            {%- endif -%}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        {%- endif -%}
+    {%- endif -%}
+    </section>
+    <style>
+        .free-shipping-announcement-bar {
+            background: {{ section.settings.background }};
+            color: {{ section.settings.text_color }};
+        }
+    </style>
+{%- endif -%}
+
+<script>
+</script>
+
+{% schema %}
+{
+  "name": "Free Shipping Banner",
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "show_announcement",
+      "label": "Show cart upsell announcement",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "cart_page_only",
+      "label": "Cart page only",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "free_shipping_amount",
+      "label": "Free Shipping Amount",
+      "default": "50"
+    },
+    {
+      "type": "color",
+      "id": "background",
+      "label": "Background",
+      "default": "#1e2d7d"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text",
+      "default": "#ffffff"
+    },
+    {
+        "type": "select",
+        "id": "text_location",
+        "options": [
+            { "value": "left", "label": "Left"},
+            { "value": "center", "label": "Center"}
+        ],
+        "label": "Text alignment",
+        "default": "center"
+    }
+  ]
+}
+{% endschema %}
+```
+
+2. Include the snippet in `theme.liquid` by adding the following line just above the `{{ content_for_layout }}` line in `<main>:
+
+```
+{% section 'upsell-announcement-bar' %}
+```
 
 ## Discount cheapest product in the checkout with a discount code
 
