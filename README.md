@@ -126,11 +126,96 @@ For installation; follow the linked guide and simply use the following code as t
 
 ## PO Box Checkout Shipping Restriction
 
+This script blocks a customer from continuing past the first page of the Shopify checkout if they are attempting to ship their order to a PO box.
+
+**Please note:** this solution only works for merchant on Shopify Plus as it requires access to `checkout.liquid`
+
+With the underlying code from wherever [this guy](https://stackoverflow.com/q/60370581) also got his code, I updated the regex to support the following variations of addresses that include PO box wording:
+
+* `Post Office` Box
+* `post office` box
+* `Post office` box
+* `Post Box`
+* `Post box`
+* `post box`
+* `post Box`
+* `P.O.` Box
+* `P.O.` box
+* `PO Box`
+* `PO box`
+* `PO.` Box
+* `PO.` box
+* `P.O.`
+* `PO.`
+
+1. Create a new snippet called `po-box-no-shipping.liquid` with the following contents:
+```
+  <script>
+    (function($) {
+      $(document).on('ready page:load page:change', function() {
+        var regex = /^.*p(\.O\.|o box|ost office|ost box)/i;
+        var fieldErrorClass = 'field--error';
+        var fieldErrorMessageSelector = '.field__message--error';
+        var errorText = '{{ 'plus.PO_error_message' | t }}';
+        var $inputs = $("[data-step] [name='checkout[shipping_address][address1]'], [data-step] [name='checkout[shipping_address][address2]']");
+        
+        var regexCheckFn = function(elem) {
+          var $current = $(elem);
+          var $parent = $current.closest('.field__input-wrapper');
+          var $field = $current.closest('.field');
+          if (regex.test($current.val())) {
+            if (!$field.hasClass(fieldErrorClass)) {
+              $field.addClass(fieldErrorClass);
+            }
+            if ($field.find(fieldErrorMessageSelector).length < 1) {
+              $parent.after("<p class='field__message field__message--error'>"+ errorText +"</p>");
+            }
+            return false;
+           } else {
+            if ($field.hasClass(fieldErrorClass)) {
+              $field.removeClass(fieldErrorClass);
+            }
+            if ($field.find(fieldErrorMessageSelector).length > 0) {
+              $field.find(fieldErrorMessageSelector).remove();
+            }
+            return true;
+          }
+        };
+        
+        // Call regex check on form submit
+        $(document).on('submit', '[data-step] form', function() {
+          // default to true and will be set to false if there is an error to prevent form submission
+          var isValid = true;
+          $inputs.each(function() {
+            isValid = isValid && regexCheckFn($(this));
+          });
+          return isValid;
+        });
+        
+        // Call regex check on blur
+        $inputs.blur(function() {
+          regexCheckFn($(this));
+        });
+        
+      });
+    })(Checkout.$);
+  </script> 
+```
+2. Inlcude the snippet in `checkout.liquid`, just after the opening `<body>` tag using:
+
+```
+{% include 'po-box-no-shipping' %}
+```
+
+3. [Add in the wording](https://help.shopify.com/en/manual/using-themes/change-the-layout/change-wording) for the error message displayed to the customer when they try and ship to a PO box.
+
+The field will be under the "Plus" tab, and is called "Po error message". E.g. `This store is not able to ship orders to a PO BOX`
+
 ## Basic Free Shipping Upsell Banner
 
 The following theme tweak adds a basic "You are $X away from free shipping" upsell banner to a Shopify theme. 
 
-Please note: This example doesn't currenlty support automatically updating the banner messaging when the cart is updated (without a page refresh) and the theme of the banner has been built for the [Warehouse](https://themes.shopify.com/themes/warehouse/styles/metal) theme.
+**Please note:** This example doesn't currenlty support automatically updating the banner messaging when the cart is updated (without a page refresh) and the theme of the banner has been built for the [Warehouse](https://themes.shopify.com/themes/warehouse/styles/metal) theme.
 
 This example also adds in banner configuration options to the theme sections settings which let merchants control the visibility of the banner, whether it just shows up on the cart page or not, free shipping threshold, and the colour of the banner and banner text.
 
