@@ -5,9 +5,10 @@ A collection of theme tweaks for Shopify themes
 - [Redirect sold out products](#redirect-sold-out-products)
 - [Cart Donation Option](#cart-donation-option)
 - [Collection Landing Page](#collection-landing-page)
-- [PO Box Checkout Shipping Restriction]()
-- [Basic Free Shipping Upsell Banner]()
+- [PO Box Checkout Shipping Restriction](#po-box-checkout-shipping-restriction)
+- [Basic Free Shipping Upsell Banner](#basic-free-shipping-upsell-banner)
 - [Discount cheapest product in the checkout with a discount code](#discount-cheapest-product-in-the-checkout-with-a-discount-code)
+- [Add Cart Attribute from URL UTM Param](#add-cart-attribute-from-url-utm-param)
 
 ## Redirect sold out products
 
@@ -345,3 +346,28 @@ end
 
 Output.cart = Input.cart
 ```
+
+## Add Cart Attribute from URL UTM Param
+
+The following example shows up to setup a simple script to collect a UTM parameter (often from an external link to shopify) and apply it as a [Shopify cart attribute](https://shopify.dev/docs/themes/liquid/reference/objects/cart#cart-attributes).
+
+1. If not already included in `theme.liquid`, include jQuery within the head:
+```
+{{ '//ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.js' | script_tag }}
+```
+
+2. Add the following script to the end of the head tag. Be sure to include the value of `paramKey` with the UTM parameter key you are looking to have the script pick up on (e.g. from the URL `https://example.com/?utm_campaign=email_promo` you would set the value of `parmaKey` to `utm_campaign`):
+```
+<script>
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    const paramKey = "REPLACE_ME";
+    const paramValue = urlParams.get(paramKey);
+    
+    if (paramValue){
+      jQuery.post('/cart/update.js', "attributes[" + paramKey + "]="+ paramValue + "");
+    }
+</script>
+  ```
+  
+This will add a new cart attibute based on the key/value of the UTM param pulled from the URL.
