@@ -1,6 +1,8 @@
 # shopify_theme_tweaks
 A collection of theme tweaks for Shopify themes
 
+**NOTE:** The content and examples within this repository come with no support or warranty. Use at your own risk.
+
 ## Table of Contents
 - [Redirect sold out products](#redirect-sold-out-products)
 - [Cart Donation Option](#cart-donation-option)
