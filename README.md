@@ -214,6 +214,14 @@ With the underlying code from wherever [this guy](https://stackoverflow.com/q/60
 
 The field will be under the "Plus" tab, and is called "Po error message". E.g. `This store is not able to ship orders to a PO BOX`
 
+**Please note:** If the "Po error message" language field doesn't show up in your theme's language settings, then you need to go back into the theme code and add the variable (or the Plus translations section as a whole) to each of the applicable langauges your theme uses (e.g. `en.default.json`). 
+
+```
+"plus": {
+    "PO_error_message": "This store is not able to ship orders to a PO BOX"
+  },
+```
+
 ## Basic Free Shipping Upsell Banner
 
 The following theme tweak adds a basic "You are $X away from free shipping" upsell banner to a Shopify theme. 
