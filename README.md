@@ -8,6 +8,7 @@ A collection of theme tweaks for Shopify themes
 - [Cart Donation Option](#cart-donation-option)
 - [Collection Landing Page](#collection-landing-page)
 - [PO Box Checkout Shipping Restriction](#po-box-checkout-shipping-restriction)
+- [Shipping Address Field Character Limit](#shipping-address-field-character-limit)
 - [Basic Free Shipping Upsell Banner](#basic-free-shipping-upsell-banner)
 - [Discount cheapest product in the checkout with a discount code](#discount-cheapest-product-in-the-checkout-with-a-discount-code)
 - [Add Cart Attribute from URL UTM Param](#add-cart-attribute-from-url-utm-param)
@@ -221,6 +222,88 @@ The field will be under the "Plus" tab, and is called "Po error message". E.g. `
     "PO_error_message": "This store is not able to ship orders to a PO BOX"
   },
 ```
+
+## Shipping Address Field Character Limit
+
+This script blocks a customer from continuing past the first page of the Shopify checkout if either of the two main address field are longer than 35 characters.
+
+**Please note:** this solution only works for merchant on Shopify Plus as it requires access to `checkout.liquid`
+
+This code was built with the underlying code from wherever [this guy](https://stackoverflow.com/q/60370581) also got his code, and with further customizations for my above PO box restriction example:
+
+1. Create a new snippet called `ship-field-max-length.liquid` with the following contents:
+```
+  <script>
+    (function($) {
+		$(document).on('ready page:load page:change', function() {
+			var fieldErrorClass = 'field--error';
+			var fieldErrorMessageSelector = '.field__message--error';
+			var errorText = '{{ 'plus.Shipping_field_max_char_length_error_message' | t }}';
+			var $inputs = $("[data-step] [name='checkout[shipping_address][address1]'], [data-step] [name='checkout[shipping_address][address2]']");
+
+			var regexCheckFn = function(elem) {
+				var $current = $(elem);
+				var $parent = $current.closest('.field__input-wrapper');
+				var $field = $current.closest('.field');
+				
+				//   test the regex string against the value of the current element
+				// If the regex string matches
+				if ($current.val().length >= 36) {
+					if (!$field.hasClass(fieldErrorClass)) {
+						$field.addClass(fieldErrorClass);
+					}
+					if ($field.find(fieldErrorMessageSelector).length < 1) {
+						$parent.after("<p class='field__message field__message--error'>"+ errorText +"</p>");
+					}
+					return false;
+				} else {
+					if ($field.hasClass(fieldErrorClass)) {
+						$field.removeClass(fieldErrorClass);
+					}
+					if ($field.find(fieldErrorMessageSelector).length > 0) {
+						$field.find(fieldErrorMessageSelector).remove();
+					}
+					return true;
+				}
+			};
+
+			// Call regex check on form submit
+			$(document).on('submit', '[data-step] form', function() {
+				// default to true and will be set to false if there is an error to prevent form submission
+				var isValid = true;
+				$inputs.each(function() {
+					isValid = isValid && regexCheckFn($(this));
+				});
+				return isValid;
+			});
+
+			// Call regex check on blur
+			$inputs.blur(function() {
+				regexCheckFn($(this));
+			});
+
+		});
+    })(Checkout.$);
+</script> 
+```
+2. Inlcude the snippet in `checkout.liquid`, just after the opening `<body>` tag using:
+
+```
+{% include 'ship-field-max-length' %}
+```
+
+3. [Add in the wording](https://help.shopify.com/en/manual/using-themes/change-the-layout/change-wording) for the error message displayed to the customer when they try and ship to a PO box.
+
+The field will be under the "Plus" tab, and is called "Shipping field max char length error message". E.g. `Address field cannot be more than 35 characters`
+
+**Please note:** If the "Shipping field max char length error message" language field doesn't show up in your theme's language settings, then you need to go back into the theme code and add the variable (or the Plus translations section as a whole) to each of the applicable langauges your theme uses (e.g. `en.default.json`). 
+
+```
+"plus": {
+    "Shipping_field_max_char_length_error_message": "Address field cannot be more than 35 characters"
+  },
+```
+
 
 ## Basic Free Shipping Upsell Banner
 
