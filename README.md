@@ -8,7 +8,7 @@ A collection of theme tweaks for Shopify themes
 - [Cart Donation Option](#cart-donation-option)
 - [Collection Landing Page](#collection-landing-page)
 - [PO Box Checkout Shipping Restriction](#po-box-checkout-shipping-restriction)
-- [Shipping Address Field Character Limit](#shipping-address-field-character-limit)
+- [Checkout Shipping Address Field Validation](#checkout-shipping-address-field-validation)
 - [Basic Free Shipping Upsell Banner](#basic-free-shipping-upsell-banner)
 - [Discount cheapest product in the checkout with a discount code](#discount-cheapest-product-in-the-checkout-with-a-discount-code)
 - [Add Cart Attribute from URL UTM Param](#add-cart-attribute-from-url-utm-param)
@@ -128,11 +128,17 @@ Based on [this guide](https://community.shopify.com/c/Shopify-Design/Collection-
 
 For installation; follow the linked guide and simply use the following code as the contents for the cloned `page.list-collections.liquid` file rather than the code in that guide: [page.list-collections.liquid](https://github.com/HaywardPeirce/shopify_theme_tweaks/blob/master/files/collection_landing_page/page.list-collections.liquid)
 
-## PO Box Checkout Shipping Restriction
+## Checkout Shipping Address Field Validation
+
+The following scripts outline methods for restricting customers from checking out if the information they included in their shipping address doesn't match your requirements.
+
+**Please note:** these solutions only work for merchant on Shopify Plus as it requires access to `checkout.liquid`
+
+1. Create a new snippet with a name that relates to the functionality it provides (e.g. `po-box-no-shipping.liquid`)
+
+### PO Box Checkout Shipping Restriction
 
 This script blocks a customer from continuing past the first page of the Shopify checkout if they are attempting to ship their order to a PO box.
-
-**Please note:** this solution only works for merchant on Shopify Plus as it requires access to `checkout.liquid`
 
 With the underlying code from wherever [this guy](https://stackoverflow.com/q/60370581) also got his code, I updated the regex to support the following variations of addresses that include PO box wording:
 
@@ -152,7 +158,8 @@ With the underlying code from wherever [this guy](https://stackoverflow.com/q/60
 * `P.O.`
 * `PO.`
 
-1. Create a new snippet called `po-box-no-shipping.liquid` with the following contents:
+Include the following in the `po-box-no-shipping.liquid` snippet you created in step 1:
+
 ```
   <script>
     (function($) {
@@ -205,33 +212,15 @@ With the underlying code from wherever [this guy](https://stackoverflow.com/q/60
     })(Checkout.$);
   </script> 
 ```
-2. Inlcude the snippet in `checkout.liquid`, just after the opening `<body>` tag using:
 
-```
-{% include 'po-box-no-shipping' %}
-```
-
-3. [Add in the wording](https://help.shopify.com/en/manual/using-themes/change-the-layout/change-wording) for the error message displayed to the customer when they try and ship to a PO box.
-
-The field will be under the "Plus" tab, and is called "Po error message". E.g. `This store is not able to ship orders to a PO BOX`
-
-**Please note:** If the "Po error message" language field doesn't show up in your theme's language settings, then you need to go back into the theme code and add the variable (or the Plus translations section as a whole) to each of the applicable langauges your theme uses (e.g. `en.default.json`). 
-
-```
-"plus": {
-    "PO_error_message": "This store is not able to ship orders to a PO BOX"
-  },
-```
-
-## Shipping Address Field Character Limit
+### Shipping Address Field Character Limit
 
 This script blocks a customer from continuing past the first page of the Shopify checkout if either of the two main address field are longer than 35 characters.
 
-**Please note:** this solution only works for merchant on Shopify Plus as it requires access to `checkout.liquid`
-
 This code was built with the underlying code from wherever [this guy](https://stackoverflow.com/q/60370581) also got his code, and with further customizations for my above PO box restriction example:
 
-1. Create a new snippet called `ship-field-max-length.liquid` with the following contents:
+Include the following in the `ship-field-max-length.liquid` snippet you created in step 1:
+
 ```
   <script>
     (function($) {
@@ -286,7 +275,76 @@ This code was built with the underlying code from wherever [this guy](https://st
     })(Checkout.$);
 </script> 
 ```
-2. Inlcude the snippet in `checkout.liquid`, just after the opening `<body>` tag using:
+
+### Shipping Address Name - No Emojis
+
+This script blocks a customer from continuing past the first page of the Shopify checkout if either of the two name fields include emojis.
+
+This code was built with the underlying code from wherever [this guy](https://stackoverflow.com/q/60370581) also got his code, and with further customizations for my above PO box restriction example:
+
+Include the following in the `no-emoji-names.liquid` snippet you created in step 1:
+
+```
+<script>
+    (function($) {
+      $(document).on('ready page:load page:change', function() {
+        var regex = /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/;
+        var fieldErrorClass = 'field--error';
+        var fieldErrorMessageSelector = '.field__message--error';
+        var errorText = '{{ 'plus.No_emoji_names' | t }}';
+        var $inputs = $("[data-step] [name='checkout[shipping_address][first_name]'], [data-step] [name='checkout[shipping_address][last_name]']");
+        
+        var regexCheckFn = function(elem) {
+          var $current = $(elem);
+          var $parent = $current.closest('.field__input-wrapper');
+          var $field = $current.closest('.field');
+          if (regex.test($current.val())) {
+            if (!$field.hasClass(fieldErrorClass)) {
+              $field.addClass(fieldErrorClass);
+            }
+            if ($field.find(fieldErrorMessageSelector).length < 1) {
+              $parent.after("<p class='field__message field__message--error'>"+ errorText +"</p>");
+            }
+            return false;
+           } else {
+            if ($field.hasClass(fieldErrorClass)) {
+              $field.removeClass(fieldErrorClass);
+            }
+            if ($field.find(fieldErrorMessageSelector).length > 0) {
+              $field.find(fieldErrorMessageSelector).remove();
+            }
+            return true;
+          }
+        };
+        
+        // Call regex check on form submit
+        $(document).on('submit', '[data-step] form', function() {
+          // default to true and will be set to false if there is an error to prevent form submission
+          var isValid = true;
+          $inputs.each(function() {
+            isValid = isValid && regexCheckFn($(this));
+          });
+          return isValid;
+        });
+        
+        // Call regex check on blur
+        $inputs.blur(function() {
+          regexCheckFn($(this));
+        });
+        
+      });
+    })(Checkout.$);
+  </script> 
+  ```
+
+2. Inlcude the snippet in `checkout.liquid`, just after the opening `<body>`.
+
+For the PO Box example, this line would look like:
+```
+{% include 'po-box-no-shipping' %}
+```
+
+or 
 
 ```
 {% include 'ship-field-max-length' %}
@@ -294,13 +352,29 @@ This code was built with the underlying code from wherever [this guy](https://st
 
 3. [Add in the wording](https://help.shopify.com/en/manual/using-themes/change-the-layout/change-wording) for the error message displayed to the customer when they try and ship to a PO box.
 
-The field will be under the "Plus" tab, and is called "Shipping field max char length error message". E.g. `Address field cannot be more than 35 characters`
+The field will be under the "Plus" tab, and is called "Po error message". E.g. `This store is not able to ship orders to a PO BOX`
 
-**Please note:** If the "Shipping field max char length error message" language field doesn't show up in your theme's language settings, then you need to go back into the theme code and add the variable (or the Plus translations section as a whole) to each of the applicable langauges your theme uses (e.g. `en.default.json`). 
+**Please note:** If the error message language field doesn't show up in your theme's language settings, then you need to go back into the theme code and add the variable (or the Plus translations section as a whole) to each of the applicable langauges your theme uses (e.g. `en.default.json`). 
+
+```
+"plus": {
+    "PO_error_message": "This store is not able to ship orders to a PO BOX"
+  },
+```
+
+or 
 
 ```
 "plus": {
     "Shipping_field_max_char_length_error_message": "Address field cannot be more than 35 characters"
+  },
+```
+
+or 
+
+```
+"plus": {
+    "No_emoji_names": "Please enter a name without Emojis"
   },
 ```
 
